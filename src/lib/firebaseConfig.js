@@ -9,12 +9,12 @@ import { getStorage } from 'firebase/storage';
 // REACT_APP_FIREBASE_MESSAGING_SENDER_ID, REACT_APP_FIREBASE_APP_ID
 
 const firebaseConfig = {
- apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
- authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
- projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
- storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
- messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
- appId: process.env.REACT_APP_FIREBASE_APP_ID,
+    apiKey: "AIzaSyDnBIQ42thRE1EMNXi0_k4SqCGwwwhJWZw",
+    authDomain: "gallery-f8df4.firebaseapp.com",
+    projectId: "gallery-f8df4",
+    storageBucket: "gallery-f8df4.firebasestorage.app",
+    messagingSenderId: "279586393057",
+    appId: "1:279586393057:web:f507ce685d3b350e7ba0a0"
 };
 
 if (!firebaseConfig.apiKey) {

@@ -1,12 +1,14 @@
 {
   "ExpandedNodes": [
     "",
+    "\\build\\static",
+    "\\build\\static\\css",
     "\\public",
     "\\src",
     "\\src\\components",
     "\\src\\lib",
     "\\src\\types"
   ],
-  "SelectedNode": "\\src\\components\\UploadForm.jsx",
+  "SelectedNode": "\\src\\lib\\firebaseConfig.js",
   "PreviewInSolutionExplorer": false
 }
