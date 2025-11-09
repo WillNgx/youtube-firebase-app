@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+﻿import React, { useState, useEffect, useCallback } from 'react';
 import UploadForm from './components/UploadForm';
 import ImageGallery from './components/ImageGallery';
 import './index.css';
@@ -37,24 +37,23 @@ export default function App() {
     storageModulePromise.then(mod => setStorageModule(mod));
   }, []);
 
-  // fetch images whenever the storage module becomes available
-  useEffect(() => {
+  const fetchImages = useCallback(async () => {
     if (!storageModule) return;
-    let mounted = true;
-    (async () => {
-      try {
-        const data = await storageModule.getImages();
-        if (mounted) setImages(data);
-      } catch (err) {
-        console.error('Failed to fetch images', err);
-        if (mounted) setImages([]);
-      }
-    })();
-    return () => { mounted = false; };
+    try {
+      const data = await storageModule.getImages();
+      setImages(data);
+    } catch (err) {
+      console.error('Failed to fetch images', err);
+      setImages([]);
+    }
   }, [storageModule]);
 
-  // filter images whenever source images or filters change
   useEffect(() => {
+    // fetch images when storageModule becomes available
+    fetchImages();
+  }, [fetchImages]);
+
+  const filterImages = useCallback(() => {
     let filtered = [...images];
     if (nameFilter) {
       filtered = filtered.filter((img) =>
@@ -67,16 +66,15 @@ export default function App() {
     setFilteredImages(filtered);
   }, [images, nameFilter, dateFilter]);
 
+  useEffect(() => {
+    filterImages();
+  }, [filterImages]);
+
   const handleUpload = useCallback(async (imageData) => {
     if (!storageModule) return;
     await storageModule.uploadImage(imageData);
-    try {
-      const data = await storageModule.getImages();
-      setImages(data);
-    } catch (err) {
-      console.error('Failed to fetch images after upload', err);
-    }
-  }, [storageModule]);
+    await fetchImages();
+  }, [storageModule, fetchImages]);
 
   const handleDelete = useCallback(async (id) => {
     if (!storageModule) return;
@@ -85,13 +83,8 @@ export default function App() {
     } else {
       console.warn('deleteImage not available for current storage module');
     }
-    try {
-      const data = await storageModule.getImages();
-      setImages(data);
-    } catch (err) {
-      console.error('Failed to fetch images after delete', err);
-    }
-  }, [storageModule]);
+    await fetchImages();
+  }, [storageModule, fetchImages]);
 
   return (
     <div className="min-h-screen p-4">
