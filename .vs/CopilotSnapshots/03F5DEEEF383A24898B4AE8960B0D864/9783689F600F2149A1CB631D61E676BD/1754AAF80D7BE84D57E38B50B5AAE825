@@ -1,0 +1,105 @@
+﻿import React, { useState, useEffect } from 'react';
+import UploadForm from './components/UploadForm';
+import ImageGallery from './components/ImageGallery';
+import { getImages, uploadImage } from './lib/storage';
+import './index.css';
+
+/**
+ * App component - trang chính của ứng dụng (JS phiên bản)
+ */
+export default function App() {
+  const [images, setImages] = useState([]);
+  const [filteredImages, setFilteredImages] = useState([]);
+  const [nameFilter, setNameFilter] = useState('');
+  const [dateFilter, setDateFilter] = useState({ day: '', month: '', year: '' });
+
+  useEffect(() => {
+    fetchImages();
+  }, []);
+
+  useEffect(() => {
+    filterImages();
+  }, [images, nameFilter, dateFilter]);
+
+  const fetchImages = async () => {
+    const data = await getImages();
+    setImages(data);
+  };
+
+  const handleUpload = async (imageData) => {
+    await uploadImage(imageData);
+    fetchImages();
+  };
+
+  const filterImages = () => {
+    let filtered = [...images];
+    if (nameFilter) {
+      filtered = filtered.filter((img) =>
+        img.name.toLowerCase().includes(nameFilter.toLowerCase())
+      );
+    }
+    if (dateFilter.day) filtered = filtered.filter((img) => img.day === dateFilter.day);
+    if (dateFilter.month) filtered = filtered.filter((img) => img.month === dateFilter.month);
+    if (dateFilter.year) filtered = filtered.filter((img) => img.year === dateFilter.year);
+    setFilteredImages(filtered);
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-4">
+      <div className="max-w-6xl mx-auto">
+        <h1 className="text-3xl font-bold text-center mb-8 text-gray-800">
+          Hệ thống Upload & Quản lý Hình ảnh (Local Storage)
+        </h1>
+
+        <div className="grid lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-1">
+            <UploadForm onUpload={handleUpload} />
+          </div>
+
+          <div className="lg:col-span-2 space-y-6">
+            <div className="bg-white p-4 rounded-lg shadow-sm">
+              <h2 className="text-lg font-semibold mb-3">Lọc hình ảnh</h2>
+              <div className="grid sm:grid-cols-2 gap-3">
+                <input
+                  type="text"
+                  placeholder="Tìm theo tên..."
+                  value={nameFilter}
+                  onChange={(e) => setNameFilter(e.target.value)}
+                  className="input"
+                />
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Ngày"
+                    value={dateFilter.day}
+                    onChange={(e) => setDateFilter({ ...dateFilter, day: e.target.value })}
+                    className="date-input"
+                    maxLength={2}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Tháng"
+                    value={dateFilter.month}
+                    onChange={(e) => setDateFilter({ ...dateFilter, month: e.target.value })}
+                    className="date-input"
+                    maxLength={2}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Năm"
+                    value={dateFilter.year}
+                    onChange={(e) => setDateFilter({ ...dateFilter, year: e.target.value })}
+                    className="year-input"
+                    maxLength={4}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <ImageGallery images={filteredImages.length ? filteredImages : images} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -1,0 +1,56 @@
+﻿// lib/firebase.ts
+import { db, storage } from './firebaseConfig';
+import { collection, addDoc, getDocs, serverTimestamp } from 'firebase/firestore';
+import { ref, uploadString, getDownloadURL } from 'firebase/storage';
+import { ImageData } from '../types';
+
+/**
+ * Upload hình ảnh lên Firebase
+ */
+export async function uploadImage(data: Omit<ImageData, 'id'>) {
+    try {
+        // Upload ảnh lên Storage (dạng base64)
+        const storageRef = ref(storage, `images/${Date.now()}_${data.name}`);
+        await uploadString(storageRef, data.url, 'data_url');
+
+        // Lấy URL công khai
+        const url = await getDownloadURL(storageRef);
+
+        // Lưu metadata vào Firestore
+        await addDoc(collection(db, 'images'), {
+            name: data.name,
+            url: url,
+            day: data.day,
+            month: data.month,
+            year: data.year,
+            timestamp: serverTimestamp(),
+        });
+    } catch (error) {
+        console.error('Error uploading image:', error);
+        throw error;
+    }
+}
+
+/**
+ * Lấy tất cả hình ảnh từ Firestore
+ */
+export async function getImages(): Promise<ImageData[]> {
+    try {
+        const snapshot = await getDocs(collection(db, 'images'));
+        return snapshot.docs.map((doc) => {
+            const data = doc.data();
+            return {
+                id: doc.id,
+                name: data.name,
+                url: data.url,
+                day: data.day,
+                month: data.month,
+                year: data.year,
+                timestamp: data.timestamp?.toDate().toISOString() || '',
+            };
+        });
+    } catch (error) {
+        console.error('Error fetching images:', error);
+        return [];
+    }
+}

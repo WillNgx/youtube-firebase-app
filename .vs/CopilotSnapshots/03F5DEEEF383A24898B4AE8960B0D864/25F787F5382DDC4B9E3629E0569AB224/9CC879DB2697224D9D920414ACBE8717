@@ -1,0 +1,9 @@
+﻿import React from 'react';
+import './index.css';
+
+function App() {
+  // Intentionally empty UI: full-white page with no visible content.
+  return <div className="app-root" aria-hidden="true" />;
+}
+
+export default App;

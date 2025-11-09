@@ -1,7 +1,12 @@
 {
   "ExpandedNodes": [
-    ""
+    "",
+    "\\public",
+    "\\src",
+    "\\src\\components",
+    "\\src\\lib",
+    "\\src\\types"
   ],
-  "SelectedNode": "\\.gitignore",
+  "SelectedNode": "\\src\\components\\UploadForm.jsx",
   "PreviewInSolutionExplorer": false
 }

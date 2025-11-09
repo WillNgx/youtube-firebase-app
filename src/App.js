@@ -1,198 +1,157 @@
-﻿import { useState, useEffect } from 'react';
-import { Camera, Heart, MessageCircle, Share2, Save } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import UploadForm from './components/UploadForm';
+import ImageGallery from './components/ImageGallery';
+import './index.css';
 
-export default function YouTubeFirebaseApp() {
-    const [videos, setVideos] = useState([]);
-    const [newVideoUrl, setNewVideoUrl] = useState('');
-    const [newVideoTitle, setNewVideoTitle] = useState('');
-    const [likes, setLikes] = useState({});
+// runtime switch: use Firebase if env var set
+const USE_FIREBASE = process.env.REACT_APP_USE_FIREBASE === 'true';
 
-    // Load videos from memory storage on mount
-    useEffect(() => {
-        const savedVideos = [
-            {
-                id: '1',
-                title: 'React Tutorial for Beginners',
-                url: 'https://www.youtube.com/embed/SqcY0GlETPk',
-                addedAt: new Date().toISOString()
-            }
-        ];
-        setVideos(savedVideos);
+// dynamic imports: default to local storage module
+let storageModulePromise = import('./lib/storage.js');
+if (USE_FIREBASE) {
+  storageModulePromise = import('./lib/firebase.js').catch((err) => {
+    console.error('Failed to load firebase module, falling back to local storage', err);
+    return import('./lib/storage.js');
+  });
+}
 
-        const savedLikes = {};
-        savedVideos.forEach(v => {
-            savedLikes[v.id] = 0;
-        });
-        setLikes(savedLikes);
-    }, []);
+export default function App() {
+  const [images, setImages] = useState([]);
+  const [filteredImages, setFilteredImages] = useState([]);
+  const [nameFilter, setNameFilter] = useState('');
+  const [dateFilter, setDateFilter] = useState({ day: '', month: '', year: '' });
+  const [theme, setTheme] = useState('light');
+  const [storageModule, setStorageModule] = useState(null);
 
-    const extractVideoId = (url) => {
-        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-        const match = url.match(regExp);
-        return (match && match[2].length === 11) ? match[2] : null;
-    };
+  useEffect(() => {
+    const saved = localStorage.getItem('ui_theme');
+    if (saved) setTheme(saved);
+  }, []);
 
-    const addVideo = () => {
-        if (newVideoUrl && newVideoTitle) {
-            const videoId = extractVideoId(newVideoUrl);
-            if (videoId) {
-                const newVideo = {
-                    id: Date.now().toString(),
-                    title: newVideoTitle,
-                    url: `https://www.youtube.com/embed/${videoId}`,
-                    addedAt: new Date().toISOString()
-                };
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+    localStorage.setItem('ui_theme', theme);
+  }, [theme]);
 
-                const updatedVideos = [...videos, newVideo];
-                setVideos(updatedVideos);
-                setLikes(prev => ({ ...prev, [newVideo.id]: 0 }));
+  useEffect(() => {
+    storageModulePromise.then(mod => setStorageModule(mod));
+  }, []);
 
-                setNewVideoUrl('');
-                setNewVideoTitle('');
-            } else {
-                alert('URL YouTube không hợp lệ!');
-            }
-        }
-    };
+  useEffect(() => {
+    if (storageModule) fetchImages();
+  }, [storageModule]);
 
-    const handleLike = (videoId) => {
-        setLikes(prev => ({
-            ...prev,
-            [videoId]: (prev[videoId] || 0) + 1
-        }));
-    };
+  useEffect(() => {
+    filterImages();
+  }, [images, nameFilter, dateFilter]);
 
-    const deleteVideo = (videoId) => {
-        setVideos(videos.filter(v => v.id !== videoId));
-        const newLikes = { ...likes };
-        delete newLikes[videoId];
-        setLikes(newLikes);
-    };
+  const fetchImages = async () => {
+    const data = await storageModule.getImages();
+    setImages(data);
+  };
 
-    return (
-        <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
-            {/* Header */}
-            <header className="bg-white shadow-sm border-b border-gray-200">
-                <div className="max-w-6xl mx-auto px-4 py-6">
-                    <div className="flex items-center gap-3">
-                        <div className="bg-gradient-to-r from-purple-500 to-pink-500 p-2 rounded-lg">
-                            <Camera className="w-6 h-6 text-white" />
-                        </div>
-                        <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                            Video Gallery
-                        </h1>
-                    </div>
-                    <p className="text-gray-600 mt-2">Quản lý và chia sẻ video YouTube yêu thích</p>
+  const handleUpload = async (imageData) => {
+    await storageModule.uploadImage(imageData);
+    fetchImages();
+  };
+
+  const handleDelete = async (id) => {
+    if (storageModule.deleteImage) {
+      await storageModule.deleteImage(id);
+    } else {
+      // If using firebase.js currently delete not implemented
+      console.warn('deleteImage not available for current storage module');
+    }
+    fetchImages();
+  };
+
+  const filterImages = () => {
+    let filtered = [...images];
+    if (nameFilter) {
+      filtered = filtered.filter((img) =>
+        img.name.toLowerCase().includes(nameFilter.toLowerCase())
+      );
+    }
+    if (dateFilter.day) filtered = filtered.filter((img) => img.day === dateFilter.day);
+    if (dateFilter.month) filtered = filtered.filter((img) => img.month === dateFilter.month);
+    if (dateFilter.year) filtered = filtered.filter((img) => img.year === dateFilter.year);
+    setFilteredImages(filtered);
+  };
+
+  return (
+    <div className="min-h-screen p-4">
+      <div className="max-w-6xl mx-auto">
+        <header className="app-header">
+          <div className="app-title">
+            <h1>Image Upload & Management</h1>
+            <div className="app-sub">Upload, filter and manage your images</div>
+          </div>
+
+          <div style={{ display: 'flex', gap:12, alignItems: 'center' }}>
+            <div className="theme-toggle" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
+              <div className="dot" style={{ background: theme === 'dark' ? 'var(--accent)' : 'var(--surface)' }} />
+              <div style={{ fontSize:13 }}>{theme === 'dark' ? 'Dark' : 'Light'}</div>
+            </div>
+          </div>
+        </header>
+
+        <div className="grid lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-1">
+            <div className="card">
+              <UploadForm onUpload={handleUpload} />
+            </div>
+          </div>
+
+          <div className="lg:col-span-2 space-y-6">
+            <div className="card">
+              <h2 className="text-lg font-semibold mb-3">Filter Images</h2>
+              <div className="grid sm:grid-cols-2 gap-3">
+                 <input                           
+                                  type="text"
+                                  placeholder="Search by name..."
+                                  value={nameFilter}
+                                  onChange={(e) => setNameFilter(e.target.value)}
+                                  className="input"
+
+                />
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Day"
+                    value={dateFilter.day}
+                    onChange={(e) => setDateFilter({ ...dateFilter, day: e.target.value })}
+                                      className="
+"
+                                      maxLength={2}
+                                      hidden
+
+                  />
+                  <input
+                    type="text"
+                    placeholder="Month"
+                    value={dateFilter.month}
+                    onChange={(e) => setDateFilter({ ...dateFilter, month: e.target.value })}
+                    className="date-input"
+                                      maxLength={2}
+                                      hidden
+                  />
+                  <input
+                    type="text"
+                    placeholder="Year"
+                    value={dateFilter.year}
+                    onChange={(e) => setDateFilter({ ...dateFilter, year: e.target.value })}
+                    className="year-input"
+                                      maxLength={4}
+                                      hidden
+                  />
                 </div>
-            </header>
+              </div>
+            </div>
 
-            <main className="max-w-6xl mx-auto px-4 py-8">
-                {/* Add Video Form */}
-                <div className="bg-white rounded-2xl shadow-lg p-6 mb-8 border border-gray-100">
-                    <h2 className="text-xl font-semibold mb-4 text-gray-800">Thêm Video Mới</h2>
-                    <div className="space-y-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Tiêu đề video
-                            </label>
-                            <input
-                                type="text"
-                                value={newVideoTitle}
-                                onChange={(e) => setNewVideoTitle(e.target.value)}
-                                placeholder="Nhập tiêu đề video..."
-                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                URL YouTube
-                            </label>
-                            <input
-                                type="text"
-                                value={newVideoUrl}
-                                onChange={(e) => setNewVideoUrl(e.target.value)}
-                                placeholder="https://www.youtube.com/watch?v=..."
-                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition"
-                            />
-                        </div>
-                        <button
-                            onClick={addVideo}
-                            className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white py-3 rounded-lg font-medium hover:from-purple-600 hover:to-pink-600 transition-all transform hover:scale-[1.02] active:scale-[0.98]"
-                        >
-                            Thêm Video
-                        </button>
-                    </div>
-                </div>
-
-                {/* Video Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {videos.map((video) => (
-                        <div
-                            key={video.id}
-                            className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100 hover:shadow-xl transition-shadow"
-                        >
-                            <div className="aspect-video">
-                                <iframe
-                                    src={video.url}
-                                    title={video.title}
-                                    className="w-full h-full"
-                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                    allowFullScreen
-                                />
-                            </div>
-
-                            <div className="p-4">
-                                <h3 className="font-semibold text-lg text-gray-800 mb-3">
-                                    {video.title}
-                                </h3>
-
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-4">
-                                        <button
-                                            onClick={() => handleLike(video.id)}
-                                            className="flex items-center gap-2 text-gray-600 hover:text-pink-500 transition-colors"
-                                        >
-                                            <Heart className="w-5 h-5" />
-                                            <span className="text-sm font-medium">{likes[video.id] || 0}</span>
-                                        </button>
-
-                                        <button className="flex items-center gap-2 text-gray-600 hover:text-blue-500 transition-colors">
-                                            <MessageCircle className="w-5 h-5" />
-                                        </button>
-
-                                        <button className="flex items-center gap-2 text-gray-600 hover:text-green-500 transition-colors">
-                                            <Share2 className="w-5 h-5" />
-                                        </button>
-                                    </div>
-
-                                    <button
-                                        onClick={() => deleteVideo(video.id)}
-                                        className="text-red-500 hover:text-red-600 text-sm font-medium transition-colors"
-                                    >
-                                        Xóa
-                                    </button>
-                                </div>
-
-                                <p className="text-xs text-gray-400 mt-3">
-                                    {new Date(video.addedAt).toLocaleDateString('vi-VN')}
-                                </p>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-
-                {videos.length === 0 && (
-                    <div className="text-center py-16">
-                        <Camera className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                        <h3 className="text-xl font-semibold text-gray-600 mb-2">
-                            Chưa có video nào
-                        </h3>
-                        <p className="text-gray-400">
-                            Thêm video YouTube đầu tiên của bạn!
-                        </p>
-                    </div>
-                )}
-            </main>
+            <ImageGallery images={filteredImages.length ? filteredImages : images} onDelete={handleDelete} />
+          </div>
         </div>
-    );
+      </div>
+    </div>
+  );
 }

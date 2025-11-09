@@ -1,0 +1,10 @@
+﻿// types/index.ts
+export interface ImageData {
+    id: string;
+    name: string;
+    url: string;
+    day: string;
+    month: string;
+    year: string;
+    timestamp: string;
+}

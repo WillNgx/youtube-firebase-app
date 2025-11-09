@@ -1,0 +1,49 @@
+﻿# YouTube Firebase App (Simplified Local Version)
+
+Ứng dụng web demo upload và quản lý hình ảnh. Phiên bản trong workspace này dùng localStorage để lưu ảnh (base64) thay vì kết nối Firebase để dễ chạy ngay lập tức.
+
+## Tính năng
+- Upload hình ảnh (chọn file, nhập tên)
+- Mặc định lấy ngày/tháng/năm theo múi giờ GMT+4 từ API `worldtimeapi.org` (nếu API lỗi sẽ dùng giờ máy có +4h)
+- Lọc ảnh theo tên (không phân biệt hoa thường)
+- Lọc theo ngày, tháng, năm
+
+## Cấu trúc chính (mỗi file có phần mô tả):
+
+- `src/App.tsx`
+ - Component gốc: quản lý state `images`, `filteredImages`, `nameFilter`, `dateFilter`.
+ - Chứa logic filter và gọi `getImages`/`uploadImage` từ `src/lib/storage.ts`.
+
+- `src/components/UploadForm.tsx`
+ - Form upload: lấy thời gian GMT+4 từ API, cho phép chọn file và nhập tên.
+ - Khi submit sẽ đọc file thành base64 và gọi `onUpload`.
+
+- `src/components/ImageGallery.tsx`
+ - Hiển thị lưới các ảnh; mỗi ảnh show tên và ngày tháng.
+
+- `src/lib/storage.ts`
+ - Lưu/truy xuất dữ liệu ảnh vào `localStorage` với key `image_app_data_v1`.
+ - Hàm: `getImages()`, `uploadImage(data)`.
+
+- `src/types/index.ts`
+ - Định nghĩa type `ImageData`.
+
+## Cài đặt & chạy
+
+1. Cài dependencies
+
+```
+npm install
+```
+
+2. Start dev server
+
+```
+npm start
+```
+
+## Ghi chú
+- Đây là phiên bản local để dễ chạy. Nếu bạn muốn sử dụng Firebase thực sự, hãy chỉnh `src/lib/firebase.ts` và `src/lib/firebaseConfig.ts` với cấu hình phù hợp và thay `import { getImages, uploadImage } from './lib/storage'` bằng `./lib/firebase`.
+- Để giảm kích thước localStorage bạn có thể chuyển lưu ảnh sang server hoặc Firebase Storage.
+
+Nếu cần, tôi sẽ hỗ trợ chuyển lại sang Firebase và hướng dẫn cách cấu hình biến môi trường.

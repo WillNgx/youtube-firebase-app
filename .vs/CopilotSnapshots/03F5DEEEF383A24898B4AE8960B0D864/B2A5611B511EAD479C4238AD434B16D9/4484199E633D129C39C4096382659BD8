@@ -1,0 +1,157 @@
+﻿import React, { useState, useEffect } from 'react';
+import UploadForm from './components/UploadForm';
+import ImageGallery from './components/ImageGallery';
+import './index.css';
+
+// runtime switch: use Firebase if env var set
+const USE_FIREBASE = process.env.REACT_APP_USE_FIREBASE === 'true';
+
+// dynamic imports: default to local storage module
+let storageModulePromise = import('./lib/storage.js');
+if (USE_FIREBASE) {
+  storageModulePromise = import('./lib/firebase.js').catch((err) => {
+    console.error('Failed to load firebase module, falling back to local storage', err);
+    return import('./lib/storage.js');
+  });
+}
+
+export default function App() {
+  const [images, setImages] = useState([]);
+  const [filteredImages, setFilteredImages] = useState([]);
+  const [nameFilter, setNameFilter] = useState('');
+  const [dateFilter, setDateFilter] = useState({ day: '', month: '', year: '' });
+  const [theme, setTheme] = useState('light');
+  const [storageModule, setStorageModule] = useState(null);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('ui_theme');
+    if (saved) setTheme(saved);
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+    localStorage.setItem('ui_theme', theme);
+  }, [theme]);
+
+  useEffect(() => {
+    storageModulePromise.then(mod => setStorageModule(mod));
+  }, []);
+
+  useEffect(() => {
+    if (storageModule) fetchImages();
+  }, [storageModule]);
+
+  useEffect(() => {
+    filterImages();
+  }, [images, nameFilter, dateFilter]);
+
+  const fetchImages = async () => {
+    const data = await storageModule.getImages();
+    setImages(data);
+  };
+
+  const handleUpload = async (imageData) => {
+    await storageModule.uploadImage(imageData);
+    fetchImages();
+  };
+
+  const handleDelete = async (id) => {
+    if (storageModule.deleteImage) {
+      await storageModule.deleteImage(id);
+    } else {
+      // If using firebase.js currently delete not implemented
+      console.warn('deleteImage not available for current storage module');
+    }
+    fetchImages();
+  };
+
+  const filterImages = () => {
+    let filtered = [...images];
+    if (nameFilter) {
+      filtered = filtered.filter((img) =>
+        img.name.toLowerCase().includes(nameFilter.toLowerCase())
+      );
+    }
+    if (dateFilter.day) filtered = filtered.filter((img) => img.day === dateFilter.day);
+    if (dateFilter.month) filtered = filtered.filter((img) => img.month === dateFilter.month);
+    if (dateFilter.year) filtered = filtered.filter((img) => img.year === dateFilter.year);
+    setFilteredImages(filtered);
+  };
+
+  return (
+    <div className="min-h-screen p-4">
+      <div className="max-w-6xl mx-auto">
+        <header className="app-header">
+          <div className="app-title">
+            <h1>Image Upload & Management</h1>
+            <div className="app-sub">Upload, filter and manage your images</div>
+          </div>
+
+          <div style={{ display: 'flex', gap:12, alignItems: 'center' }}>
+            <div className="theme-toggle" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
+              <div className="dot" style={{ background: theme === 'dark' ? 'var(--accent)' : 'var(--surface)' }} />
+              <div style={{ fontSize:13 }}>{theme === 'dark' ? 'Dark' : 'Light'}</div>
+            </div>
+          </div>
+        </header>
+
+        <div className="grid lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-1">
+            <div className="card">
+              <UploadForm onUpload={handleUpload} />
+            </div>
+          </div>
+
+          <div className="lg:col-span-2 space-y-6">
+            <div className="card">
+              <h2 className="text-lg font-semibold mb-3">Filter Images</h2>
+              <div className="grid sm:grid-cols-2 gap-3">
+                 <input                           
+                                  type="text"
+                                  placeholder="Search by name..."
+                                  value={nameFilter}
+                                  onChange={(e) => setNameFilter(e.target.value)}
+                                  className="input"
+
+                />
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Day"
+                    value={dateFilter.day}
+                    onChange={(e) => setDateFilter({ ...dateFilter, day: e.target.value })}
+                                      className="
+"
+                                      maxLength={2}
+                                      hidden
+
+                  />
+                  <input
+                    type="text"
+                    placeholder="Month"
+                    value={dateFilter.month}
+                    onChange={(e) => setDateFilter({ ...dateFilter, month: e.target.value })}
+                    className="date-input"
+                                      maxLength={2}
+                                      hidden
+                  />
+                  <input
+                    type="text"
+                    placeholder="Year"
+                    value={dateFilter.year}
+                    onChange={(e) => setDateFilter({ ...dateFilter, year: e.target.value })}
+                    className="year-input"
+                                      maxLength={4}
+                                      hidden
+                  />
+                </div>
+              </div>
+            </div>
+
+            <ImageGallery images={filteredImages.length ? filteredImages : images} onDelete={handleDelete} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

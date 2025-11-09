@@ -1,0 +1,31 @@
+﻿// lib/storage.ts
+// L?u tr? data t?m th?i vào localStorage ?? d? demo mà không c?n Firebase
+import type { ImageData } from '../types/index';
+
+const STORAGE_KEY = 'image_app_data_v1';
+
+/** L?y danh sách ?nh t? localStorage */
+export async function getImages(): Promise<ImageData[]> {
+ const raw = localStorage.getItem(STORAGE_KEY);
+ if (!raw) return [];
+ try {
+ const parsed = JSON.parse(raw) as ImageData[];
+ return parsed;
+ } catch (e) {
+ console.error('Failed to parse storage data', e);
+ return [];
+ }
+}
+
+/** L?u ?nh vào localStorage
+ * - Nh?n data: name, url (base64), day, month, year, timestamp
+ */
+export async function uploadImage(data: Omit<ImageData, 'id'>) {
+ const items = await getImages();
+ const newItem: ImageData = {
+ id: String(Date.now()),
+ ...data,
+ };
+ items.unshift(newItem);
+ localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+}

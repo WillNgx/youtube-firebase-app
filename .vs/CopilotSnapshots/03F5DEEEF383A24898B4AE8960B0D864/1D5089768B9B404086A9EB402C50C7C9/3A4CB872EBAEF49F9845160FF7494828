@@ -1,0 +1,131 @@
+﻿// App.tsx
+import { useState, useEffect } from 'react';
+import UploadForm from './components/UploadForm';
+import ImageGallery from './components/ImageGallery';
+import { getImages, uploadImage, deleteImage } from './lib/storage';
+import type { ImageData } from './types/index';
+
+/**
+ * App component - trang chính của ứng dụng
+ */
+export default function App() {
+    const [images, setImages] = useState<ImageData[]>([]);
+    const [filteredImages, setFilteredImages] = useState<ImageData[]>([]);
+    const [nameFilter, setNameFilter] = useState('');
+    const [dateFilter, setDateFilter] = useState({ day: '', month: '', year: '' });
+
+    // Lấy dữ liệu ban đầu từ storage khi component mount
+    useEffect(() => {
+        fetchImages();
+    }, []);
+
+    // Cập nhật filtered khi images hoặc filter thay đổi
+    useEffect(() => {
+        filterImages();
+    }, [images, nameFilter, dateFilter]);
+
+    // Lấy images từ local storage
+    const fetchImages = async () => {
+        const data = await getImages();
+        setImages(data);
+    };
+
+    // Xử lý upload: gọi storage.uploadImage và reload danh sách
+    const handleUpload = async (imageData: Omit<ImageData, 'id'>) => {
+        await uploadImage(imageData);
+        fetchImages();
+    };
+
+    // Xử lý xóa ảnh
+    const handleDelete = async (id: string) => {
+        await deleteImage(id);
+        fetchImages();
+    };
+
+    // Lọc ảnh theo tên và ngày/tháng/năm
+    const filterImages = () => {
+        let filtered = [...images];
+
+        // Tìm theo tên, không phân biệt hoa thường
+        if (nameFilter) {
+            filtered = filtered.filter(img =>
+                img.name.toLowerCase().includes(nameFilter.toLowerCase())
+            );
+        }
+
+        if (dateFilter.day) {
+            filtered = filtered.filter(img => img.day === dateFilter.day);
+        }
+        if (dateFilter.month) {
+            filtered = filtered.filter(img => img.month === dateFilter.month);
+        }
+        if (dateFilter.year) {
+            filtered = filtered.filter(img => img.year === dateFilter.year);
+        }
+
+        setFilteredImages(filtered);
+    };
+
+    return (
+        <div className="min-h-screen bg-gray-50 p-4">
+            <div className="max-w-6xl mx-auto">
+                <h1 className="text-3xl font-bold text-center mb-8 text-gray-800">
+                    Hệ thống Upload & Quản lý Hình ảnh (Local Storage)
+                </h1>
+
+                <div className="grid lg:grid-cols-3 gap-6">
+                    {/* Form Upload */}
+                    <div className="lg:col-span-1">
+                        <UploadForm onUpload={handleUpload} />
+                    </div>
+
+                    {/* Filters & Gallery */}
+                    <div className="lg:col-span-2 space-y-6">
+                        {/* Filter Bar */}
+                        <div className="bg-white p-4 rounded-lg shadow-sm">
+                            <h2 className="text-lg font-semibold mb-3">Lọc hình ảnh</h2>
+                            <div className="grid sm:grid-cols-2 gap-3">
+                                <input
+                                    type="text"
+                                    placeholder="Tìm theo tên..."
+                                    value={nameFilter}
+                                    onChange={(e) => setNameFilter(e.target.value)}
+                                    className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                                <div className="flex gap-2">
+                                    <input
+                                        type="text"
+                                        placeholder="Ngày"
+                                        value={dateFilter.day}
+                                        onChange={(e) => setDateFilter({ ...dateFilter, day: e.target.value })}
+                                        className="w-20 px-3 py-2 border rounded-lg text-center"
+                                        maxLength={2}
+                                    />
+                                    <input
+                                        type="text"
+                                        placeholder="Tháng"
+                                        value={dateFilter.month}
+                                        onChange={(e) => setDateFilter({ ...dateFilter, month: e.target.value })}
+                                        className="w-20 px-3 py-2 border rounded-lg text-center"
+                                        maxLength={2}
+                                    />
+                                    <input
+                                        type="text"
+                                        placeholder="Năm"
+                                        value={dateFilter.year}
+                                        onChange={(e) => setDateFilter({ ...dateFilter, year: e.target.value })}
+                                        className="w-24 px-3 py-2 border rounded-lg text-center"
+                                        maxLength={4}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Image Gallery */}
+                        <ImageGallery images={filteredImages.length ? filteredImages : images} onDelete={handleDelete} />
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}

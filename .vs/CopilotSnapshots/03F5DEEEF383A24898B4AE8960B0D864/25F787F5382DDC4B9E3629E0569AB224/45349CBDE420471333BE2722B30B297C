@@ -1,0 +1,131 @@
+﻿// components/UploadForm.tsx
+import React, { useState } from 'react';
+import { getCurrentGMTPlus4Time } from '../lib/time';
+import { ImageData } from '../types';
+
+interface UploadFormProps {
+    onUpload: (data: Omit<ImageData, 'id'>) => void;
+}
+
+export default function UploadForm({ onUpload }: UploadFormProps) {
+    const [file, setFile] = useState<File | null>(null);
+    const [name, setName] = useState('');
+    const [date, setDate] = useState({ day: '', month: '', year: '' });
+    const [loading, setLoading] = useState(false);
+
+    // Lấy thời gian GMT+4 khi component mount
+    React.useEffect(() => {
+        const time = getCurrentGMTPlus4Time();
+        setDate({
+            day: time.day,
+            month: time.month,
+            year: time.year,
+        });
+    }, []);
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files?.[0]) {
+            setFile(e.target.files[0]);
+        }
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!file || !name.trim()) return;
+
+        setLoading(true);
+        try {
+            const reader = new FileReader();
+            reader.onload = async () => {
+                const base64 = reader.result as string;
+                onUpload({
+                    name: name.trim(),
+                    url: base64,
+                    day: date.day,
+                    month: date.month,
+                    year: date.year,
+                    timestamp: new Date().toISOString(),
+                });
+
+                // Reset form
+                setFile(null);
+                setName('');
+                (e.target as HTMLFormElement).reset();
+            };
+            reader.readAsDataURL(file);
+        } catch (error) {
+            console.error('Upload failed:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="bg-white p-6 rounded-lg shadow-md">
+            <h2 className="text-xl font-semibold mb-4">Upload Hình ảnh</h2>
+            <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Tên hình ảnh *
+                    </label>
+                    <input
+                        type="text"
+                        required
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Nhập tên..."
+                    />
+                </div>
+
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Ngày (GMT+4)
+                    </label>
+                    <div className="flex gap-2">
+                        <input
+                            type="text"
+                            value={date.day}
+                            readOnly
+                            className="w-20 px-3 py-2 border rounded-lg bg-gray-50 text-center"
+                        />
+                        <input
+                            type="text"
+                            value={date.month}
+                            readOnly
+                            className="w-20 px-3 py-2 border rounded-lg bg-gray-50 text-center"
+                        />
+                        <input
+                            type="text"
+                            value={date.year}
+                            readOnly
+                            className="flex-1 px-3 py-2 border rounded-lg bg-gray-50 text-center"
+                        />
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">Thời gian tự động lấy theo GMT+4</p>
+                </div>
+
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Chọn file *
+                    </label>
+                    <input
+                        type="file"
+                        accept="image/*"
+                        required
+                        onChange={handleFileChange}
+                        className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    />
+                </div>
+
+                <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    {loading ? 'Đang upload...' : 'Upload Hình ảnh'}
+                </button>
+            </form>
+        </div>
+    );
+}

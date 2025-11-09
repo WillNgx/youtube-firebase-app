@@ -1,0 +1,31 @@
+﻿// lib/storage.ts
+// Lưu trữ data tạm thời vào localStorage để dễ demo mà không cần Firebase
+import type { ImageData } from '../types/index';
+
+const STORAGE_KEY = 'image_app_data_v1';
+
+/** Lấy danh sách ảnh từ localStorage */
+export async function getImages(): Promise<ImageData[]> {
+ const raw = localStorage.getItem(STORAGE_KEY);
+ if (!raw) return [];
+ try {
+ const parsed = JSON.parse(raw) as ImageData[];
+ return parsed;
+ } catch (e) {
+ console.error('Failed to parse storage data', e);
+ return [];
+ }
+}
+
+/** Lưu ảnh vào localStorage
+ * - Nhận data: name, url (base64), day, month, year, timestamp
+ */
+export async function uploadImage(data: Omit<ImageData, 'id'>) {
+ const items = await getImages();
+ const newItem: ImageData = {
+ id: String(Date.now()),
+ ...data,
+ };
+ items.unshift(newItem);
+ localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+}

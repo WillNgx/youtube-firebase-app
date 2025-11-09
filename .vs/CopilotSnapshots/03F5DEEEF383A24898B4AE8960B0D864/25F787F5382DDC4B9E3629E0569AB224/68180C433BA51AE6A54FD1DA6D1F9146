@@ -1,0 +1,37 @@
+﻿// components/ImageGallery.tsx
+import React from 'react';
+import { ImageData } from '../types';
+
+interface ImageGalleryProps {
+    images: ImageData[];
+}
+
+export default function ImageGallery({ images }: ImageGalleryProps) {
+    if (images.length === 0) {
+        return (
+            <div className="bg-white p-8 rounded-lg shadow-sm text-center">
+                <p className="text-gray-500">Không có hình ảnh nào để hiển thị.</p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            {images.map((img) => (
+                <div key={img.id} className="bg-white rounded-lg shadow-sm overflow-hidden">
+                    <img
+                        src={img.url}
+                        alt={img.name}
+                        className="w-full h-48 object-cover"
+                    />
+                    <div className="p-3">
+                        <h3 className="font-medium text-gray-800 truncate">{img.name}</h3>
+                        <p className="text-sm text-gray-500">
+                            {img.day}/{img.month}/{img.year}
+                        </p>
+                    </div>
+                </div>
+            ))}
+        </div>
+    );
+}

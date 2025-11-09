@@ -1,0 +1,41 @@
+// lib/firebase.js
+import { db, storage } from './firebaseConfig';
+import { collection, addDoc, getDocs, serverTimestamp, deleteDoc, doc } from 'firebase/firestore';
+import { ref, uploadString, getDownloadURL } from 'firebase/storage';
+
+// Upload image (base64) to Firebase Storage and save metadata to Firestore
+export async function uploadImage(data) {
+ // data: { name, url (data_url), day, month, year, timestamp }
+ const storageRef = ref(storage, `images/${Date.now()}_${data.name}`);
+ await uploadString(storageRef, data.url, 'data_url');
+ const url = await getDownloadURL(storageRef);
+ await addDoc(collection(db, 'images'), {
+ name: data.name,
+ url,
+ day: data.day,
+ month: data.month,
+ year: data.year,
+ timestamp: serverTimestamp(),
+ });
+}
+
+export async function getImages() {
+ const snapshot = await getDocs(collection(db, 'images'));
+ return snapshot.docs.map((docSnap) => {
+ const d = docSnap.data();
+ return {
+ id: docSnap.id,
+ name: d.name,
+ url: d.url,
+ day: d.day,
+ month: d.month,
+ year: d.year,
+ timestamp: d.timestamp && d.timestamp.toDate ? d.timestamp.toDate().toISOString() : '',
+ };
+ });
+}
+
+export async function deleteImage(id) {
+ // Delete Firestore doc. Note: does not delete file from Storage.
+ await deleteDoc(doc(db, 'images', id));
+}

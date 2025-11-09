@@ -1,0 +1,57 @@
+﻿// components/ImageGallery.tsx
+import * as React from 'react';
+import type { ImageData } from '../types/index';
+
+interface ImageGalleryProps {
+    images: ImageData[];
+    onDelete?: (id: string) => void;
+}
+
+export default function ImageGallery({ images, onDelete }: ImageGalleryProps) {
+    if (images.length === 0) {
+        return (
+            <div className="bg-white p-8 rounded-lg shadow-sm text-center empty-state">
+                <p className="text-gray-500">No images to display.</p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="gallery">
+            {images.map((img) => (
+                <div key={img.id} className="bg-white rounded-lg shadow-sm overflow-hidden">
+                    <div className="card-image">
+                        <img
+                            src={img.url}
+                            alt={img.name}
+                        />
+                    </div>
+                    <div className="card-meta">
+                        <h3 className="card-title">{img.name}</h3>
+                        <p className="card-sub">
+                            {img.day}/{img.month}/{img.year}
+                        </p>
+                        {img.timestamp && (
+                            <p className="card-sub" style={{ marginTop: '4px', fontSize: '0.8rem' }}>
+                                {new Date(img.timestamp).toLocaleString()}
+                            </p>
+                        )}
+                        <div style={{ marginTop: '8px', display: 'flex', gap: '8px' }}>
+                            {onDelete && (
+                                <button
+                                    onClick={() => {
+                                        if (confirm('Delete this image?')) onDelete(img.id);
+                                    }}
+                                    className="btn"
+                                    style={{ background: '#ef4444' }}
+                                >
+                                    Delete
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            ))}
+        </div>
+    );
+}

@@ -1,70 +1,49 @@
-# Getting Started with Create React App
+# YouTube Firebase App (Simplified Local Version)
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+?ng d?ng web demo upload và qu?n lý hình ?nh. Phiên b?n trong workspace này dùng localStorage ?? l?u ?nh (base64) thay vì k?t n?i Firebase ?? d? ch?y ngay l?p t?c.
 
-## Available Scripts
+## Tính n?ng
+- Upload hình ?nh (ch?n file, nh?p tên)
+- M?c ??nh l?y ngày/tháng/n?m theo múi gi? GMT+4 t? API `worldtimeapi.org` (n?u API l?i s? dùng gi? máy có +4h)
+- L?c ?nh theo tên (không phân bi?t hoa th??ng)
+- L?c theo ngày, tháng, n?m
 
-In the project directory, you can run:
+## C?u trúc chính (m?i file có ph?n mô t?):
 
-### `npm start`
+- `src/App.tsx`
+ - Component g?c: qu?n lý state `images`, `filteredImages`, `nameFilter`, `dateFilter`.
+ - Ch?a logic filter và g?i `getImages`/`uploadImage` t? `src/lib/storage.ts`.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+- `src/components/UploadForm.tsx`
+ - Form upload: l?y th?i gian GMT+4 t? API, cho phép ch?n file và nh?p tên.
+ - Khi submit s? ??c file thành base64 và g?i `onUpload`.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+- `src/components/ImageGallery.tsx`
+ - Hi?n th? l??i các ?nh; m?i ?nh show tên và ngày tháng.
 
-### `npm test`
+- `src/lib/storage.ts`
+ - L?u/truy xu?t d? li?u ?nh vào `localStorage` v?i key `image_app_data_v1`.
+ - Hàm: `getImages()`, `uploadImage(data)`.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+- `src/types/index.ts`
+ - ??nh ngh?a type `ImageData`.
 
-### `npm run build`
+## Cài ??t & ch?y
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+1. Cài dependencies
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+```
+npm install
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+2. Start dev server
 
-### `npm run eject`
+```
+npm start
+```
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+## Ghi chú
+- ?ây là phiên b?n local ?? d? ch?y. N?u b?n mu?n s? d?ng Firebase th?c s?, hãy ch?nh `src/lib/firebase.ts` và `src/lib/firebaseConfig.ts` v?i c?u hình phù h?p và thay `import { getImages, uploadImage } from './lib/storage'` b?ng `./lib/firebase`.
+- ?? gi?m kích th??c localStorage b?n có th? chuy?n l?u ?nh sang server ho?c Firebase Storage.
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+N?u c?n, tôi s? h? tr? chuy?n l?i sang Firebase và h??ng d?n cách c?u hình bi?n môi tr??ng.

@@ -1,0 +1,15 @@
+﻿// lib/time.ts
+/**
+ * Lấy thời gian hiện tại theo múi giờ GMT+4
+ * @returns { day: string, month: string, year: string }
+ */
+export function getCurrentGMTPlus4Time() {
+    const now = new Date();
+    const gmtPlus4 = new Date(now.getTime() + 4 * 60 * 60 * 1000);
+
+    return {
+        day: String(gmtPlus4.getUTCDate()).padStart(2, '0'),
+        month: String(gmtPlus4.getUTCMonth() + 1).padStart(2, '0'),
+        year: String(gmtPlus4.getUTCFullYear()),
+    };
+}
