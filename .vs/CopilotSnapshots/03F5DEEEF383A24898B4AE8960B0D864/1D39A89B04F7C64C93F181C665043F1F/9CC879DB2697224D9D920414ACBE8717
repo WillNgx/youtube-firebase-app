@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import UploadForm from './components/UploadForm';
 import ImageGallery from './components/ImageGallery';
 import './index.css';
@@ -37,23 +37,35 @@ export default function App() {
     storageModulePromise.then(mod => setStorageModule(mod));
   }, []);
 
-  const fetchImages = useCallback(async () => {
-    if (!storageModule) return;
-    try {
-      const data = await storageModule.getImages();
-      setImages(data);
-    } catch (err) {
-      console.error('Failed to fetch images', err);
-      setImages([]);
-    }
+  useEffect(() => {
+    if (storageModule) fetchImages();
   }, [storageModule]);
 
   useEffect(() => {
-    // fetch images when storageModule becomes available
-    fetchImages();
-  }, [fetchImages]);
+    filterImages();
+  }, [images, nameFilter, dateFilter]);
 
-  const filterImages = useCallback(() => {
+  const fetchImages = async () => {
+    const data = await storageModule.getImages();
+    setImages(data);
+  };
+
+  const handleUpload = async (imageData) => {
+    await storageModule.uploadImage(imageData);
+    fetchImages();
+  };
+
+  const handleDelete = async (id) => {
+    if (storageModule.deleteImage) {
+      await storageModule.deleteImage(id);
+    } else {
+      // If using firebase.js currently delete not implemented
+      console.warn('deleteImage not available for current storage module');
+    }
+    fetchImages();
+  };
+
+  const filterImages = () => {
     let filtered = [...images];
     if (nameFilter) {
       filtered = filtered.filter((img) =>
@@ -64,27 +76,7 @@ export default function App() {
     if (dateFilter.month) filtered = filtered.filter((img) => img.month === dateFilter.month);
     if (dateFilter.year) filtered = filtered.filter((img) => img.year === dateFilter.year);
     setFilteredImages(filtered);
-  }, [images, nameFilter, dateFilter]);
-
-  useEffect(() => {
-    filterImages();
-  }, [filterImages]);
-
-  const handleUpload = useCallback(async (imageData) => {
-    if (!storageModule) return;
-    await storageModule.uploadImage(imageData);
-    await fetchImages();
-  }, [storageModule, fetchImages]);
-
-  const handleDelete = useCallback(async (id) => {
-    if (!storageModule) return;
-    if (storageModule.deleteImage) {
-      await storageModule.deleteImage(id);
-    } else {
-      console.warn('deleteImage not available for current storage module');
-    }
-    await fetchImages();
-  }, [storageModule, fetchImages]);
+  };
 
   return (
     <div className="min-h-screen p-4">
@@ -114,12 +106,13 @@ export default function App() {
             <div className="card">
               <h2 className="text-lg font-semibold mb-3">Filter Images</h2>
               <div className="grid sm:grid-cols-2 gap-3">
-                <input
-                  type="text"
-                  placeholder="Search by name..."
-                  value={nameFilter}
-                  onChange={(e) => setNameFilter(e.target.value)}
-                  className="input"
+                 <input                           
+                                  type="text"
+                                  placeholder="Search by name..."
+                                  value={nameFilter}
+                                  onChange={(e) => setNameFilter(e.target.value)}
+                                  className="input"
+
                 />
                 <div className="flex gap-2">
                   <input
@@ -127,8 +120,11 @@ export default function App() {
                     placeholder="Day"
                     value={dateFilter.day}
                     onChange={(e) => setDateFilter({ ...dateFilter, day: e.target.value })}
-                    className="date-input"
-                    maxLength={2}
+                                      className="
+"
+                                      maxLength={2}
+                                      hidden
+
                   />
                   <input
                     type="text"
@@ -136,7 +132,8 @@ export default function App() {
                     value={dateFilter.month}
                     onChange={(e) => setDateFilter({ ...dateFilter, month: e.target.value })}
                     className="date-input"
-                    maxLength={2}
+                                      maxLength={2}
+                                      hidden
                   />
                   <input
                     type="text"
@@ -144,7 +141,8 @@ export default function App() {
                     value={dateFilter.year}
                     onChange={(e) => setDateFilter({ ...dateFilter, year: e.target.value })}
                     className="year-input"
-                    maxLength={4}
+                                      maxLength={4}
+                                      hidden
                   />
                 </div>
               </div>
